@@ -1,0 +1,14 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Install Apache2 Package
+    apt:
+      name: apache2
+      state: absent # each time the run the playbook, the packages are the latest version available
+  - name: Add PHP support for Apache
+    apt:
+      name: libapache2-mod-php
+      state: absent
