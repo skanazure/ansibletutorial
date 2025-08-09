@@ -1,0 +1,40 @@
+---
+
+- hosts: all
+  become : yes
+  tasks:
+
+  - name: Update the Repo Index
+    apt:
+      update_cache: yes
+    when: ansible_distribution in ["Debian","Ubuntu"]
+
+  - name: install apache
+    apt: 
+      name: apache2
+      state: latest
+    when: ansible_distribution_version == "22.04" and ansible_distribution == "Ubuntu"
+
+  - name: install  php support for apache
+    apt:
+      name: libapache2-mod-php
+      state: latest 
+    when: ansible_distribution == "Ubuntu"
+
+
+  - name: Update the Repo Index
+    dnf:
+      update_cache: yes
+    when: ansible_distribution == "Rocky"
+
+  - name: install apache
+    dnf:
+      name: httpd
+      state: latest
+    when: ansible_distribution_version == "9.6" and ansible_distribution == "Rocky"
+
+  - name: install  php support for apache
+    dnf:
+      name: php
+      state: latest
+    when: ansible_distribution == "Rocky"
