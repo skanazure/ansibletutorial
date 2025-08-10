@@ -1,0 +1,72 @@
+---
+
+- hosts: all
+  become : yes
+  pre_tasks: # These tasks needs to be run before any other playbook gets run
+
+  - name: Install Updates  UBUNTU
+    tags: always
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+
+
+  - name: Install for ROCKY
+    tags: always
+    dnf:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "Rocky"
+
+- hosts: UbuntuServers
+  become: true
+  tasks:
+
+  - name: install apache UBUNTU
+    tags: apache,apache2,ubuntu
+    apt: 
+      name: 
+        - apache2
+        - libapache2-mod-php
+      state: latest
+      update_cache: yes
+    when: ansible_distribution_version == "22.04" and ansible_distribution == "Ubuntu"
+
+
+  - name: Install MARIA DB for UBUNTU
+    apt:
+      name: mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+
+
+- hosts: RockyServers
+  become: true
+  tasks:
+
+  - name: install HTTPD ROCKY
+    tags: apache,centos,httpd
+    dnf:
+      name: 
+        - httpd
+        - php
+      state: latest
+    when: ansible_distribution_version == "9.6" and ansible_distribution == "Rocky"
+
+
+  - name: install Maria DB
+    tags: Rocky,db,mariadb
+    dnf:
+      name: mariadb
+      state: latest
+    when: ansible_distribution == "Rocky"
+
+
+  - name: install samba package
+    tags: samba
+    package: 
+      name: samba
+      state: latest
