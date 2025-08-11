@@ -1,0 +1,121 @@
+---
+
+- hosts: all
+  become : yes
+  pre_tasks: # These tasks needs to be run before any other playbook gets run
+
+  - name: Install Updates  UBUNTU
+    tags: always
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+
+
+  - name: Install for ROCKY
+    tags: always
+    dnf:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "Rocky"
+
+- hosts: UbuntuServers
+  become: true
+  tasks:
+
+  - name: install apache UBUNTU
+    tags: apache,apache2,ubuntu
+    apt: 
+      name: 
+        - apache2
+        - libapache2-mod-php
+      state: latest
+      update_cache: yes
+    when: ansible_distribution_version == "22.04" and ansible_distribution == "Ubuntu"
+
+
+  - name: Install MARIA DB for UBUNTU
+    apt:
+      name: mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Webserver Webpage
+    tags: apache,apache2,ubuntu
+    copy: 
+      src: default_site.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: 0644
+
+- hosts: workstations
+  become: true
+  tasks:
+
+  - name: install unzip
+    package:
+      name: unzip
+
+  - name: install terraform
+    unarchive:
+      src: https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_amd64.zip
+      dest: /usr/local/bin
+      remote_src: yes
+      mode: 0755
+      owner: root
+      group: root
+
+
+
+- hosts: RockyServers
+  become: true
+  tasks:
+
+  - name: install HTTPD ROCKY
+    tags: apache,centos,httpd
+    dnf:
+      name: 
+        - httpd
+        - php
+      state: latest
+    when: ansible_distribution_version == "9.6" and ansible_distribution == "Rocky"
+
+  - name: start httpd (ROCKY)
+    tags: rocky
+    service: 
+      name: httpd
+      state: started
+    when: ansible_distribution == "Rocky"
+
+  - name: change email Id of admin
+    tags: apache, rocky,httpd
+    lineinfile: 
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin "suresh@somewhere.net"
+    when: ansible_distribution == "Rocky" 
+    register: statushttpd # register allows to capture the status in a variable
+
+
+  - name: restart httpd ROCKY
+    tags: apache,apache2,httpd
+    service:
+      name: htppd
+      state: restarted
+    when: statushttpd.changed  #if the variable got changed in the above playbook
+
+  - name: install Maria DB
+    tags: Rocky,db,mariadb
+    dnf:
+      name: mariadb
+      state: latest
+    when: ansible_distribution == "Rocky"
+
+
+  - name: install samba package
+    tags: samba
+    package: 
+      name: samba
+      state: latest
